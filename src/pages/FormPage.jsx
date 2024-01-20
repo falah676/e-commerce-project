@@ -18,6 +18,7 @@ const FormPage = () => {
   const [descValue, handleDescValue, setDescValue] = useInput('');
   const [imgValue, setImgValue] = useState();
   const [isLoading, setIsLoading] = useState(false);
+  const [imgUrl, setImgUrl] = useState('');
   const navigate = useNavigate();
   const [data, setData] = useState([])
 
@@ -26,28 +27,42 @@ const FormPage = () => {
   }, [isEdit])
   useEffect(() => {
     if (data) {
-      setNameValue(data.product_name)
-      setPriceValue(data.price)
-      setStockValue(data.total_product)
-      setCategoryValue(data.category)
+      setNameValue(data.product_name);
+      setPriceValue(data.price);
+      setStockValue(data.total_product);
+      setCategoryValue(data.category);
       setDescValue(data.product_desc);
+      setImgValue(data.img_url);
+      setImgUrl(data.img_url);
       setTimeout(() => (
         setInitializing(false)
-        ), 2000)
+      ), 2000)
     }
   }, [data])
-  const handleImageValue = (e) => setImgValue(e.target.files[0])
+  const handleImageValue = (e) => {
+    setImgValue(e.target.files[0]);
+  }
+  
+  useEffect(() => {
+    if (typeof imgValue === "object") {
+      setImgUrl(uuidv4());
+    }
+  }, [imgValue]);
+  
   const handleSubmit = async (e) => {
     setIsLoading(true);
     e.preventDefault();
-    let imgUrl;
     if (!nameValue || !priceValue || !categoryValue || !stockValue || descValue.length < 30 || !descValue || !imgValue) {
-      alert("error");
+      Swal.fire({
+        icon: 'error',
+        title: "Oops...",
+        text: "Please fill all field",
+      })
+      setIsLoading(false);
       return;
     }
-    if (imgValue) {
-      imgUrl = uuidv4()
-    } else {
+    
+    if (!imgValue) {
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -68,24 +83,59 @@ const FormPage = () => {
       return;
     }
     if (isEdit) {
-      const {error} = await updateProduct(idNumber, nameValue, stockValue, descValue, priceValue, categoryValue);
-      if (!error) {
+      const imageName = categoryValue + '/' + imgUrl
+      const nameOld = data.category + '/' + data.img_url
+      if (typeof imgValue === "object") {
         Swal.fire({
-          icon: "success",
-          title: `Data berhasil disimpan`,
-          showConfirmButton: false,
-          timer: 1500
-        })
-        navigate('/')
+          icon:"warning",
+          title: "Warning",
+          text: "Gambar baru dapat berubah paling cepat 1 menit setelah Anda submit, mau lanjut?",
+          showCancelButton: true,
+          confirmButtonText:'Ya Lanjut',
+          cancelButtonText : 'Nanti aja kalau gitu',
+          reverseButtons : true,
+          }).then(async (result) => {
+            if (result.value) {
+              // TODO: ketika category berubah gambar akan error
+              const { error } = await updateProduct(idNumber, nameValue, stockValue, descValue, priceValue, categoryValue, imgValue, imageName, nameOld, imgUrl);
+              if (!error) {
+                Swal.fire({
+                  icon: "success",
+                  title: `Data berhasil disimpan`,
+                  showConfirmButton: false,
+                  timer: 1500
+                })
+                navigate('/')
+              } else {
+                Swal.fire({
+                  icon: "error",
+                  title: `${error.message}`
+                })
+                setIsLoading(false);
+                return;
+              }
+            }
+        }) 
       } else {
-        Swal.fire({
-          icon: "error",
-          title: `${error.message}`
-        })
-        setIsLoading(false);
-        return;
-      }
+        const { error } = await updateProduct(idNumber, nameValue, stockValue, descValue, priceValue, categoryValue, imgValue, imageName, nameOld, imgUrl);
+        if (!error) {
+          Swal.fire({
+            icon: "success",
+            title: `Data berhasil disimpan`,
+            showConfirmButton: false,
+            timer: 1500
+          })
+          navigate('/')
         } else {
+          Swal.fire({
+            icon: "error",
+            title: `${error.message}`
+          })
+          setIsLoading(false);
+          return;
+        }
+      }
+    } else {
       const imageName = categoryValue + '/' + imgUrl
       const insert = await InsertUser(nameValue, stockValue, descValue, priceValue, categoryValue, imageName, imgValue, imgUrl)
       console.log(imgUrl);
@@ -107,7 +157,7 @@ const FormPage = () => {
       }
     }
   }
-  console.log(isEdit);
+  console.log(imgUrl);
   if (initializing) {
     return <LoadingComponent />
   }
@@ -145,15 +195,13 @@ const FormPage = () => {
             </select>
           </label>
 
-            { 
-            !isEdit&&
+
           <label className="form-control w-full max-w-xs">
             <div className="label">
               <span className="label-text">Choose Photo</span>
             </div>
-            <input type="file" className="file-input file-input-bordered w-full" accept="image/*" onChange={handleImageValue}/>
+            <input type="file" className="file-input file-input-bordered w-full" accept="image/*" onChange={handleImageValue} />
           </label>
-            }
 
           <label className="form-control">
             <div className="label">

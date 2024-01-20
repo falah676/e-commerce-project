@@ -1,3 +1,4 @@
+import Swal from "sweetalert2";
 import { supabase } from "./Client";
 const uploadImageProduct = async (FileName, file) => {
   const { error } = await supabase.storage
@@ -14,6 +15,19 @@ const uploadImageProduct = async (FileName, file) => {
   }
 }
 
+const deletImage = async(FileName) => {
+  const { data, error } = await supabase.storage
+  .from('task_school_1')
+  .remove([FileName])
+  if (error) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Warning!',
+      text: `Cannot Delete Image`
+    })
+    console.log(data);
+  }
+} 
 const getImage = (FileName) => {
   const { data, error } = supabase.storage
     .from("task_school_1")
@@ -74,12 +88,17 @@ const DetailProduct = async (id) => {
 }
 
 
-const updateProduct = async (id, nameValue, totalValue, descValue, priceValue, categoryValue,) => {
+const updateProduct = async (id, nameValue, totalValue, descValue, priceValue, categoryValue, file, fileName, fileNameOld, imgUrl) => {
   const { error } = await supabase
     .from('task_school_1')
-    .update({ product_name: nameValue, total_product: totalValue, product_desc: descValue, price: priceValue, category: categoryValue })
+    .update({ product_name: nameValue, total_product: totalValue, product_desc: descValue, price: priceValue, category: categoryValue, img_url:imgUrl })
     .eq('id', id)
     .select()
+
+    if (typeof file === 'object') {
+      await deletImage(fileNameOld);
+      await uploadImageProduct(fileName, file)
+    }
   return { error }
 }
 export {

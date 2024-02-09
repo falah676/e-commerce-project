@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import useInput from '../hooks/useInput'
-import { InsertUser, updateProduct } from '../supabase/CrudSupabase';
+import {  InsertProduct, updateProduct } from '../supabase/CrudSupabase';
 import Swal from 'sweetalert2';
 import { useNavigate, useParams } from 'react-router-dom';
 import LoadingComponent from '../Components/LoadingComponent'
@@ -24,7 +24,7 @@ const FormPage = () => {
 
   useEffect(() => {
     isEdit ? getDetailProduct(setData, idNumber) : setInitializing(false)
-  }, [isEdit])
+  }, [idNumber, isEdit])
   useEffect(() => {
     if (data) {
       setNameValue(data.product_name);
@@ -97,7 +97,7 @@ const FormPage = () => {
           }).then(async (result) => {
             if (result.value) {
               // TODO: ketika category berubah gambar akan error
-              const { error } = await updateProduct(idNumber, nameValue, stockValue, descValue, priceValue, categoryValue, imgValue, imageName, nameOld, imgUrl);
+              const { error } = await updateProduct(stockValue, idNumber, nameValue, descValue, priceValue, categoryValue, imgValue, imageName, nameOld, imgUrl);
               if (!error) {
                 Swal.fire({
                   icon: "success",
@@ -117,7 +117,7 @@ const FormPage = () => {
             }
         }) 
       } else {
-        const { error } = await updateProduct(idNumber, nameValue, stockValue, descValue, priceValue, categoryValue, imgValue, imageName, nameOld, imgUrl);
+        const { error } = await updateProduct(stockValue, idNumber, nameValue, descValue, priceValue, categoryValue, imgValue, imageName, nameOld, imgUrl);
         if (!error) {
           Swal.fire({
             icon: "success",
@@ -137,7 +137,7 @@ const FormPage = () => {
       }
     } else {
       const imageName = categoryValue + '/' + imgUrl
-      const insert = await InsertUser(nameValue, stockValue, descValue, priceValue, categoryValue, imageName, imgValue, imgUrl)
+      const insert = await InsertProduct(nameValue, stockValue, descValue, priceValue, categoryValue, imageName, imgValue, imgUrl)
       console.log(imgUrl);
       if (!insert) {
         Swal.fire({
@@ -184,6 +184,19 @@ const FormPage = () => {
             </div>
             <input required disabled={isLoading} value={stockValue} onChange={handleStockValue} type="number" placeholder="Type here" className="input input-bordered w-full" />
           </label>
+          {
+            isEdit ?
+          <label className="form-control w-full">
+            <div className="label">
+              <span className="label-text">Category Product</span>
+            </div>
+            <select disabled className="select select-bordered" value={categoryValue}>
+              <option disabled selected value="selected">Pick one</option>
+              <option value="food">Food</option>
+              <option value="drink">Drink</option>
+            </select>
+          </label>
+          :
           <label className="form-control w-full">
             <div className="label">
               <span className="label-text">Category Product</span>
@@ -194,7 +207,7 @@ const FormPage = () => {
               <option value="drink">Drink</option>
             </select>
           </label>
-
+          }
 
           <label className="form-control w-full max-w-xs">
             <div className="label">

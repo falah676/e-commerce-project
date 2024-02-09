@@ -1,17 +1,29 @@
-import React, { useEffect, useState } from 'react'
+import  { useEffect, useState } from 'react'
 import { FaPlus } from 'react-icons/fa6'
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import LoadingComponent from '../Components/LoadingComponent';
-import { DeleteProduct, SelectAllProduct } from '../supabase/CrudSupabase';
+import { DeleteProduct, SelectAllProduct, getUserProfile } from '../supabase/CrudSupabase';
 import TableHeader from '../Components/TableComponent/TableHeader';
 import TableBody from '../Components/TableComponent/TableBody';
-const Home = () => {
+import { getUserLogin } from '../utils/FetchData';
+const Database = () => {
   const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(true)
+  // !cara yang salah
+  // TODO: PELAJARI CARA PAKE OUTLET UNTUK CARA YANG BENAR
+  const getId = JSON.parse(localStorage.getItem('sb-pimncbqgwimhulzkxcyz-auth-token'))
+
   useEffect(() => {
     const getData = async () => {
+      if (!getId) {
+        navigate("/login")
+      }
+      const {profiles} = await getUserProfile(getId.user.id);
+      if (profiles[0].role.toLowerCase() !== "admin") {
+        window.location.replace('/login')
+      }
       const { data, error } = await SelectAllProduct();
       if (error) {
         console.log('Error:', error);
@@ -27,9 +39,9 @@ const Home = () => {
       }
     }
     getData()
-  }, [])
+    }, [])
   const handleEdit = (id) => {
-    navigate(`/form/${id}`)
+    navigate(`form/${id}`)
   }
   const handleDelete = async (id) => {
     Swal.fire({
@@ -71,7 +83,7 @@ const Home = () => {
         <div className="w-full lg:w-[80%]">
           <div className="overflow-x-auto">
             <div className="min-w-full flex flex-col gap-5 py-7">
-              <button className="btn btn-xs md:btn-sm self-end" onClick={() => navigate('/form/add')}><FaPlus /> Add Data</button>
+              <button className="btn btn-xs md:btn-sm self-end" onClick={() => navigate('form/add')}><FaPlus /> Add Data</button>
               <table className="w-full border text-center text-sm font-light dark:border-neutral-500">
               <TableHeader />
               {
@@ -87,4 +99,4 @@ const Home = () => {
     </section>)
 }
 
-export default Home
+export default Database
